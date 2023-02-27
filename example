@@ -1,0 +1,22 @@
+pipeline {
+	agent any
+	environment {
+        path:
+	stages {
+		stage("git") {
+			steps {
+				git credintialsid: 'git credintialsid', url: 'https://github.com/NRK135/deployment.git'
+			}
+
+		}
+					
+		stage("build") {
+			steps {
+				sh "mvn clean install"
+									
+				}
+			}
+		}
+	  }
+	}
+	
