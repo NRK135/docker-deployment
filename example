@@ -6,8 +6,8 @@ pipeline {
   }
     agent any
     tools {
-        maven 'Maven'
-        jdk 'JDK11'
+        maven install of 'Maven'
+        jdk install of 'JDK11'
     }
     post { 
         always { 
