@@ -1,42 +1,23 @@
-pipeline {
-    environment {
-     BRANCH_NAME = "feature"
-     GIT_CREDS = credentials('docker-deployment')
-	 EMAIL_TO = 'nramakrishna135@outlook.com'
-  }
-    agent any
-    tools {
-        maven "Maven"
-        jdk "JDK11"
-    }
-    post { 
-        always { 
-            cleanWs()
-            jiraSendBuildInfo branch: '"feature', site: 'https://github.com/NRK135/docker-deployment/tree/feature'
-            jiraSendDeploymentInfo site: 'https://github.com/NRK135/docker-deployment/tree/feature', environmentId: 'us-dev-1', environmentName: 'us-dev-1', environmentType: 'development'
-        }
-    	failure {
-            emailext body: 'Failed Job - Please Check console output at $BUILD_URL to view the results. \n\n ${CHANGES} \n\n -------------------------------------------------- \n${BUILD_LOG, maxLines=100, escapeHtml=false}', 
-                    to: "${EMAIL_TO}", 
-                    subject: 'Build failed in Jenkins: $PROJECT_NAME - #$BUILD_NUMBER'
-        }
+pipeline { 
+    agent any 
+    options {
+        skipStagesAfterUnstable()
     }
     stages {
-        stage("Code Checkout from GIT") {
-         steps {
-          git branch: env.BRANCH_NAME,
-             credentialsId: 'docker-deployment',
-             url: 'https://github.com/NRK135/docker-deployment.git'
-             echo 'The code was pulled from...' + env.BRANCH_NAME
+        stage('Build') { 
+            steps { 
+                sh 'make' 
             }
         }
-        stage("Executing Java JAR file") {
+        stage('Test'){
             steps {
-                // sh 'mvn clean'
-                // sh 'mvn clean install'
-                sh 'mvn clean package -DskipTests -U -e'
-                sh 'java -jar  /opt/dataservices/jenkins/workspace/NM-DevelopmentEnvironment-Pipeline/Aws-Gcp-Bulk-Migration-Service/smb-migration-bulk-service/target/smb-migration-bulk-service-1.0.jar'
-				 
+                sh 'make check'
+                junit 'reports/**/*.xml' 
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'make publish'
             }
         }
     }
